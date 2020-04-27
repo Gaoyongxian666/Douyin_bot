@@ -8,6 +8,8 @@
 
 ### 项目如何打包 
 > 在output 文件夹中有发布的范本，例如打算发布版本V0.13  
+> 蓝奏云： https://ww.lanzous.com/ic08qqh
+
 1. 在output中复制一份重命名 douyin_v0.13  
 2. 检查pip安装的包 requirements.txt  注意 humanize==0.5.1  
 3. 打开命令行，切换到你的环境
