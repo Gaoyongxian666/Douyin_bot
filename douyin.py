@@ -11,6 +11,9 @@ import re
 from bs4 import BeautifulSoup
 import requests
 import time
+import requests
+from urllib.parse import urlparse
+import json
 
 
 def get_play_addr(input_url):
@@ -69,6 +72,34 @@ def download2File(name, video_url,html_url):
             c.perform()
             c.close()
 
+
+def downloadFile(name, video_url,html_url):
+    play_addr=video_url
+    with open("download.txt", 'wb') as f:
+        c = pycurl.Curl()
+        c.setopt(pycurl.USERAGENT,
+                 "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1")  # 配置请求HTTP头的User-Agent
+        c.setopt(c.URL, play_addr)
+        c.setopt(c.CAINFO, certifi.where())
+        c.setopt(c.WRITEDATA, f)
+        c.perform()
+        c.close()
+
+
+    with open("download.txt", "r") as f:
+        line = f.read()
+        video_soup = BeautifulSoup(line, "lxml")
+        url = video_soup.a["href"]
+        with open("download/" + name, 'wb') as f:
+            c = pycurl.Curl()
+            c.setopt(pycurl.USERAGENT,
+                     "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1")  # 配置请求HTTP头的User-Agent
+            c.setopt(c.URL, url)
+            c.setopt(c.CAINFO, certifi.where())
+            c.setopt(c.WRITEDATA, f)
+            c.perform()
+            c.close()
+
 def fileNum(path):
     fileNum=0
     for lists in os.listdir(path):
@@ -77,7 +108,7 @@ def fileNum(path):
             fileNum = fileNum + 1  # 统计文件数量
     return fileNum
 
-def android10_task():
+def android10_task(warter):
     time.sleep(2)
     flag=1
     mflag=0
@@ -88,11 +119,24 @@ def android10_task():
                 url_list = re.findall(pattern, line)
                 html_url = url_list[0]
                 # print(url_list)
-                header = random.choice(header_list)
-                html = requests.get(html_url, headers=header).text
 
-                soup = BeautifulSoup(html, "lxml")
-                # print(line)
+                header = random.choice(header_list)
+                r = requests.get(html_url, headers=header)
+
+                matchObj = re.match(r'.*dytk:.*?"(.*?)".*', r.text, re.M | re.I | re.S)
+                dytk = matchObj.group(1)
+
+                reditList = r.history
+                last_url = reditList[len(reditList) - 1].headers["location"]
+
+                path = urlparse(last_url).path
+                item_ids = path.split("/")[3]
+                js_url = "https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=" + item_ids + "&dytk=" + dytk
+
+                html = requests.get(js_url, headers=header).text
+
+                mydict = json.loads(html)
+                video_url = mydict["item_list"][0]["video"]["play_addr"]["url_list"][0]
 
                 matchObj = re.match(r'(.*)data="(.*?)https.*', line, re.M | re.I |re.S)
                 # print(matchObj)
@@ -104,13 +148,16 @@ def android10_task():
                 file_name = p.replace(" ", "")
                 file_name=file_name.strip()
                 file_name = re.sub('[\/:*?"<>|]', '-', file_name)
+                # #theVideo
 
-                raw_video = str(soup.find_all("script")[-1])
-                video_url = re.findall(pattern, raw_video)[0]
-                img_url = re.findall(pattern, raw_video)[1]
+
                 myfileNum = fileNum("download")
                 k = "%03d" % (myfileNum + 1)
-                download2File( str(k)+file_name + ".mp4", video_url,html_url)
+                if warter=="y":
+                    download2File( str(k)+file_name + ".mp4", video_url,html_url)
+                else:
+                    downloadFile( str(k)+file_name + ".mp4", video_url,html_url)
+
                 print("\033[1;93m下载视频线程：" + file_name + ".mp4：下载完成" + "\033[0m")
             except:
                 print(traceback.format_exc())
@@ -124,7 +171,9 @@ def android10_task():
             mflag=mflag+1
             time.sleep(10)
     os.system("pause")
-def task():
+
+
+def task(warter):
     time.sleep(2)
     flag=1
     mflag=0
@@ -135,11 +184,25 @@ def task():
                 url_list = re.findall(pattern, line)
                 html_url = url_list[0]
                 # print(url_list)
-                header = random.choice(header_list)
-                html = requests.get(html_url, headers=header).text
 
-                soup = BeautifulSoup(html, "lxml")
-                # print(line)
+                header = random.choice(header_list)
+                r = requests.get(html_url, headers=header)
+
+                matchObj = re.match(r'.*dytk:.*?"(.*?)".*', r.text, re.M | re.I | re.S)
+                dytk = matchObj.group(1)
+
+                reditList = r.history
+                last_url = reditList[len(reditList) - 1].headers["location"]
+
+                path = urlparse(last_url).path
+                item_ids = path.split("/")[3]
+                js_url = "https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=" + item_ids + "&dytk=" + dytk
+
+                html = requests.get(js_url, headers=header).text
+
+                mydict = json.loads(html)
+                video_url = mydict["item_list"][0]["video"]["play_addr"]["url_list"][0]
+
 
                 matchObj = re.match(r'(.*)https.*', line, re.M | re.I |re.S)
                 # print(matchObj)
@@ -152,12 +215,13 @@ def task():
                 file_name=file_name.strip()
                 file_name = re.sub('[\/:*?"<>|]', '-', file_name)
 
-                raw_video = str(soup.find_all("script")[-1])
-                video_url = re.findall(pattern, raw_video)[0]
-                img_url = re.findall(pattern, raw_video)[1]
+
                 myfileNum = fileNum("download")
                 k = "%03d" % (myfileNum + 1)
-                download2File( str(k)+file_name + ".mp4", video_url,html_url)
+                if warter=="y":
+                    download2File( str(k)+file_name + ".mp4", video_url,html_url)
+                else:
+                    downloadFile( str(k)+file_name + ".mp4", video_url,html_url)
                 print("\033[1;93m下载视频线程：" + file_name + ".mp4：下载完成" + "\033[0m")
             except:
                 print(traceback.format_exc())
@@ -174,7 +238,7 @@ def task():
 
 
 
-def android10_do():
+def android10_do(warter):
     app_list=d.app_list_running()
     if "ca.zgrs.clipper" not in app_list:
         d.app_install("https://github.com/majido/clipper/releases/download/v1.2.1/clipper.apk")
@@ -190,7 +254,7 @@ def android10_do():
     else:
         num = 20
 
-    p = Thread(target=android10_task)
+    p = Thread(target=android10_task,args=(warter,))
     p.start()
 
     for i in range(num):
@@ -235,7 +299,7 @@ def android10_do():
             print("\033[1;36m获取分享链接：获取分享链接失败" + "\033[0m")
             time.sleep(4)
 
-def do():
+def do(warter):
     print("开始下载：请先打开第一个要下载的视频（可以暂停）")
     if d.app_current()["package"]!="com.ss.android.ugc.aweme":
         print("\033[1;91m开始下载：请先打开抖音APP，然后输入下载视频数量"+ "\033[0m")
@@ -248,7 +312,7 @@ def do():
     else:
         num = 20
 
-    p = Thread(target=task)
+    p = Thread(target=task,args=(warter,))
     p.start()
 
     for i in range(num):
@@ -316,7 +380,7 @@ if __name__ == "__main__":
 
     print('''
 ***************************************************************************************************************************
-                                            抖音视频下载小助手 V 0.14
+                                            抖音视频下载小助手 V 0.15
                     注意：抖音app版本必须是最新版本 V10.9.0  更新时间：2020-4-30
                 
                     Github地址：https://github.com/Gaoyongxian666/Douyin_bot
@@ -349,10 +413,12 @@ if __name__ == "__main__":
         print("环境搭建：设备连接成功！")
         print("***************************************************************************************************************************")
         android  = input("开始下载：android版本是否是10以上（y/n）：")
+        water  = input("开始下载：是否下载无水印：默认带水印，带水印稳定性高（y/n）：")
+
         if android=="y":
-            android10_do()
+            android10_do(water)
         else:
-            do()
+            do(water)
 
     except :
         print("环境搭建：测试连接失败")
