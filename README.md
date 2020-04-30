@@ -1,10 +1,12 @@
-# 抖音视频下载小助手 V 0.13
-### 仅适用于最新版本 抖音 V10.8.0
+# 抖音视频下载小助手 V 0.14
+### 仅适用于最新版本 抖音 V10.9.0
 ### 需要电脑和手机，需要手机打开调试  自动化项目   
 
  * 项目就在douyin.py ,最后使用pyinstaller打包exe，大约19M
  * V0.12 更新无水印   
- * V0.13 修复Android10无法剪贴  https://ww.lanzous.com/ibzphjc  
+ * V0.13 修复Android10无法剪贴  https://ww.lanzous.com/ibzphjc 
+ * V0.14 抖音app V10.9.0  https://ww.lanzous.com/ic3kbsj   
+ 
 
 ### 项目如何打包 
 > 在output 文件夹中有发布的范本，例如打算发布版本V0.13  

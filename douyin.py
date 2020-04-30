@@ -77,6 +77,53 @@ def fileNum(path):
             fileNum = fileNum + 1  # 统计文件数量
     return fileNum
 
+def android10_task():
+    time.sleep(2)
+    flag=1
+    mflag=0
+    while flag:
+        if not q.empty():
+            line = q.get()
+            try:
+                url_list = re.findall(pattern, line)
+                html_url = url_list[0]
+                # print(url_list)
+                header = random.choice(header_list)
+                html = requests.get(html_url, headers=header).text
+
+                soup = BeautifulSoup(html, "lxml")
+                # print(line)
+
+                matchObj = re.match(r'(.*)data="(.*?)https.*', line, re.M | re.I |re.S)
+                # print(matchObj)
+                p=matchObj.group(2)
+
+                # #pageletReflowVideo > div > div.info-box.fl > div.video-info > p
+                # #pageletReflowVideo > div > div.info-box.fl > div.video-info > p
+                # p = soup.select("#pageletReflowVideo > div > div.info-box.fl > div.video-info > p")[0].string
+                file_name = p.replace(" ", "")
+                file_name=file_name.strip()
+                file_name = re.sub('[\/:*?"<>|]', '-', file_name)
+
+                raw_video = str(soup.find_all("script")[-1])
+                video_url = re.findall(pattern, raw_video)[0]
+                img_url = re.findall(pattern, raw_video)[1]
+                myfileNum = fileNum("download")
+                k = "%03d" % (myfileNum + 1)
+                download2File( str(k)+file_name + ".mp4", video_url,html_url)
+                print("\033[1;93m下载视频线程：" + file_name + ".mp4：下载完成" + "\033[0m")
+            except:
+                print(traceback.format_exc())
+                print("下载视频线程：" + line + "下载失败")
+            mflag=0
+
+        else:
+            print("\033[1;93m下载视频线程：当前下载队列为空" + "\033[0m")
+            if mflag==5:
+                flag=0
+            mflag=mflag+1
+            time.sleep(10)
+    os.system("pause")
 def task():
     time.sleep(2)
     flag=1
@@ -92,10 +139,17 @@ def task():
                 html = requests.get(html_url, headers=header).text
 
                 soup = BeautifulSoup(html, "lxml")
+                # print(line)
+
+                matchObj = re.match(r'(.*)https.*', line, re.M | re.I |re.S)
+                # print(matchObj)
+                p=matchObj.group(1)
 
                 # #pageletReflowVideo > div > div.info-box.fl > div.video-info > p
-                p = soup.select("#pageletReflowVideo > div > div.info-box.fl > div.video-info > p")[0].string
+                # #pageletReflowVideo > div > div.info-box.fl > div.video-info > p
+                # p = soup.select("#pageletReflowVideo > div > div.info-box.fl > div.video-info > p")[0].string
                 file_name = p.replace(" ", "")
+                file_name=file_name.strip()
                 file_name = re.sub('[\/:*?"<>|]', '-', file_name)
 
                 raw_video = str(soup.find_all("script")[-1])
@@ -106,6 +160,7 @@ def task():
                 download2File( str(k)+file_name + ".mp4", video_url,html_url)
                 print("\033[1;93m下载视频线程：" + file_name + ".mp4：下载完成" + "\033[0m")
             except:
+                print(traceback.format_exc())
                 print("下载视频线程：" + line + "下载失败")
             mflag=0
 
@@ -120,7 +175,9 @@ def task():
 
 
 def android10_do():
-    d.app_install("https://github.com/majido/clipper/releases/download/v1.2.1/clipper.apk")
+    app_list=d.app_list_running()
+    if "ca.zgrs.clipper" not in app_list:
+        d.app_install("https://github.com/majido/clipper/releases/download/v1.2.1/clipper.apk")
     print("开始下载：请先打开第一个要下载的视频（可以暂停）")
     if d.app_current()["package"]!="com.ss.android.ugc.aweme":
         print("\033[1;91m开始下载：请先打开抖音APP，然后输入下载视频数量"+ "\033[0m")
@@ -133,7 +190,7 @@ def android10_do():
     else:
         num = 20
 
-    p = Thread(target=task)
+    p = Thread(target=android10_task)
     p.start()
 
     for i in range(num):
@@ -163,8 +220,16 @@ def android10_do():
             # print(raw_url)
             print("\033[1;36m获取分享链接：" + result + "\033[0m")
             q.put(result)
+
+            # raw_url=result
+            # if raw_url not in raw_url_list:
+            #     raw_url_list.append(raw_url)
+            #     q.put(raw_url)
+            # else:
+            #     print("\033[1;36m获取分享链接：获取分享链接重复" + "\033[0m")
+
             # 向上滑动,获取下一个
-            d(resourceId="com.ss.android.ugc.aweme:id/bc0").swipe("up", steps=14)
+            d(resourceId="com.ss.android.ugc.aweme:id/b0q").swipe("up", steps=14)
         except Exception:
             print(traceback.format_exc())
             print("\033[1;36m获取分享链接：获取分享链接失败" + "\033[0m")
@@ -211,10 +276,17 @@ def do():
 
             raw_url = d.jsonrpc.getClipboard()
             # print(raw_url)
+            # raw_url_list.append(raw_url)
             print("\033[1;36m获取分享链接：" + raw_url + "\033[0m")
             q.put(raw_url)
+
+            # if raw_url not in raw_url_list:
+            #     raw_url_list.append(raw_url)
+            #     q.put(raw_url)
+            # else:
+            #     print("\033[1;36m获取分享链接：获取分享链接重复" + "\033[0m")
             # 向上滑动,获取下一个
-            d(resourceId="com.ss.android.ugc.aweme:id/bc0").swipe("up", steps=14)
+            d(resourceId="com.ss.android.ugc.aweme:id/b0q").swipe("up", steps=14)
         except Exception:
             print(traceback.format_exc())
             print("\033[1;36m获取分享链接：获取分享链接失败" + "\033[0m")
@@ -222,6 +294,7 @@ def do():
 
 
 if __name__ == "__main__":
+    raw_url_list=[]
     # print("设置ADB环境变量。。。。")
     work_dir=os.path.dirname(sys.argv[0])
     os.chdir(work_dir)
@@ -243,8 +316,8 @@ if __name__ == "__main__":
 
     print('''
 ***************************************************************************************************************************
-                                            抖音视频下载小助手 V 0.13
-                    注意：抖音app版本必须是最新版本 V10.8.0  更新时间：2020-4-27
+                                            抖音视频下载小助手 V 0.14
+                    注意：抖音app版本必须是最新版本 V10.9.0  更新时间：2020-4-30
                 
                     Github地址：https://github.com/Gaoyongxian666/Douyin_bot
                     公众号：我的光印象  QQ群：1056916780 下载目录：解压目录/download
